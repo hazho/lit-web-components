@@ -261,7 +261,9 @@ packages/labs/task/node_modules/
 packages/labs/task/index.*
 packages/labs/task/task.*
 packages/labs/testing/index.*
+packages/labs/testing/fixtures.*
 packages/labs/testing/lib
+packages/labs/testing/test
 
 packages/localize/testdata/
 packages/localize/examples/
