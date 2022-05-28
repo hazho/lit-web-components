@@ -44,8 +44,33 @@ declare global {
  */
 export async function ssrFixture(
   template: TemplateResult,
-  {modules, base, hydrate = true}: SsrFixtureOption
+  {modules, hydrate = true}: SsrFixtureOption
 ): Promise<Element | null | undefined> {
+  // Find the test file url from the call stack
+  // Chrome:
+  // Error
+  // at ssrFixture (http://localhost:8000/node_modules/@lit-labs/testing/lib/fixtures/ssrFixture.js:29:17)
+  // at ssrHydratedFixture (http://localhost:8000/node_modules/@lit-labs/testing/lib/fixtures/ssrFixture.js:76:12)
+  // at o.<anonymous> (http://localhost:8000/test/my-element_test.js?wtr-session-id=GhB4vW1TXWxXwqgt3F8QD:65:30)
+  //
+  // Firefox:
+  // ssrFixture@http://localhost:8000/node_modules/@lit-labs/testing/lib/fixtures/ssrFixture.js:29:17
+  // ssrHydratedFixture@http://localhost:8000/node_modules/@lit-labs/testing/lib/fixtures/ssrFixture.js:76:12
+  // @http://localhost:8000/test/my-element_test.js?wtr-session-id=NaCljZAFiyeOoV6-qBqwr:65:30
+  //
+  // Webkit:
+  // @http://localhost:8000/node_modules/@lit-labs/testing/lib/fixtures/ssrFixture.js:29:26
+  // asyncFunctionResume@[native code]
+  // asyncFunctionResume@[native code]
+  // @http://localhost:8000/test/my-element_test.js?wtr-session-id=aKWON-wBOBGyzb2CwIvmK:65:37
+  const match = new Error().stack?.match(
+    /http:\/\/localhost.+(?=\?wtr-session-id)/
+  );
+  if (!match) {
+    throw new Error('Could not find call site for ssrFixture');
+  }
+  const base = match[0];
+
   const rendered = await executeServerCommand<string, Payload>(
     litSsrPluginCommand,
     {
@@ -94,9 +119,9 @@ export async function ssrFixture(
  */
 export async function ssrHydratedFixture(
   template: TemplateResult,
-  {modules, base}: FixtureOption
+  {modules}: FixtureOption
 ) {
-  return ssrFixture(template, {modules, base, hydrate: true});
+  return ssrFixture(template, {modules, hydrate: true});
 }
 
 /**
@@ -116,7 +141,7 @@ export async function ssrHydratedFixture(
  */
 export async function ssrNonHydratedFixture(
   template: TemplateResult,
-  {modules, base}: FixtureOption
+  {modules}: FixtureOption
 ) {
-  return ssrFixture(template, {modules, base, hydrate: false});
+  return ssrFixture(template, {modules, hydrate: false});
 }
